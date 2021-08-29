@@ -54,6 +54,13 @@ public class AnimationSFXManager : MonoBehaviour
         gm.PlayFootstepSFX(sfx[Random.Range(0, sfx.Length)]);
     }
 
+    public void PlaySFXStoppable(int index)
+    {
+        if (gm == null)
+            gm = FindObjectOfType<GameManager>();
+        gm.PlaySFXStoppable(sfx[index]);
+    }
+
     public void SendMessageToReceiver(string message)
     {
         receiver.SendMessage(message);

@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
     Animator anim;
     GameManager gm;
     BoxCollider2D col;
+    CameraFollow cam;
 
     public int dir = 1;
     public bool isGrounded;
@@ -16,8 +17,10 @@ public class PlayerController : MonoBehaviour
     public bool isDying;
     public bool isFrozen;
     public GameObject jumpDirt;
+    public GameObject cleaver;
 
     bool canFlipGravity = true;
+    bool inGameEndTrigger;
     int storedDir;
 
     IEnumerator flipCoroutine;
@@ -26,6 +29,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         gm = FindObjectOfType<GameManager>();
+        cam = FindObjectOfType<CameraFollow>();
         spr = transform.GetChild(0).GetComponent<SpriteRenderer>();
         anim = spr.GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
@@ -53,13 +57,49 @@ public class PlayerController : MonoBehaviour
 
             if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
             {
-                gm.PlaySFX(gm.sfx[0]);
-                GameObject d = Instantiate(jumpDirt, new Vector2(transform.position.x, transform.position.y - 1 * Mathf.Sign(rb.gravityScale)), transform.rotation);
-                d.transform.localScale = new Vector2(1, 1 * Mathf.Sign(rb.gravityScale));
-                rb.velocity = new Vector2(rb.velocity.x, 13.5f * Mathf.Sign(rb.gravityScale));
-                isGrounded = false;
+                if (inGameEndTrigger)
+                {
+                    FindObjectOfType<TankScript>().dontSpawnProjectiles = true;
+                    gm.StopMusic();
+                    isFrozen = true;
+                    Time.timeScale = 0.33f;
+                    CheckAndPlayClip("Player_ThrowCleaver", anim);
+                    gm.PlaySFX(gm.sfx[0]);
+                    GameObject d = Instantiate(jumpDirt, new Vector2(transform.position.x, transform.position.y - 1 * Mathf.Sign(rb.gravityScale)), transform.rotation);
+                    d.transform.localScale = new Vector2(1, 1 * Mathf.Sign(rb.gravityScale));
+                    rb.velocity = new Vector2(14.5f, 13.5f * Mathf.Sign(rb.gravityScale));
+                    isGrounded = false;
+                    cam.orientation = CameraFollow.CamOrientation.left;
+                    StartCoroutine(EndSoundEffects());
+                }
+                else
+                {
+                    gm.PlaySFX(gm.sfx[0]);
+                    GameObject d = Instantiate(jumpDirt, new Vector2(transform.position.x, transform.position.y - 1 * Mathf.Sign(rb.gravityScale)), transform.rotation);
+                    d.transform.localScale = new Vector2(1, 1 * Mathf.Sign(rb.gravityScale));
+                    rb.velocity = new Vector2(rb.velocity.x, 13.5f * Mathf.Sign(rb.gravityScale));
+                    isGrounded = false;
+                }
             }
         }
+    }
+
+    IEnumerator EndSoundEffects()
+    {
+        yield return new WaitForSeconds(0.25f);
+        gm.PlaySFX(gm.sfx[8]);
+        yield return new WaitForSeconds(0.25f);
+        gm.PlaySFX(gm.sfx[9]);
+        yield return new WaitForSeconds(1);
+        Time.timeScale = 1;
+        cam.orientation = CameraFollow.CamOrientation.center;
+        yield return new WaitForSeconds(6);
+        StartCoroutine(gm.PlayCredits());
+    }
+
+    public void SpawnCleaver()
+    {
+        Instantiate(cleaver, GameObject.Find("CleaverPosition").transform.position, Quaternion.identity);
     }
 
     IEnumerator GrabAndFlip(Transform t)
@@ -91,7 +131,7 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator WaitForSpacePress()
     {
-        while (!Input.GetKeyDown(KeyCode.Space))
+        while (!Input.GetKeyDown(KeyCode.Space) || isFrozen)
             yield return null;
     }
 
@@ -127,6 +167,7 @@ public class PlayerController : MonoBehaviour
         gm.PlaySFX(gm.sfx[6]);
         transform.localScale = new Vector2(1, transform.localScale.y * -1f);
         rb.gravityScale *= -1;
+        transform.localPosition += new Vector3(0, 0.5f * Mathf.Sign(rb.gravityScale));
         StartCoroutine(FlipGravityDelay());
     }
 
@@ -138,6 +179,7 @@ public class PlayerController : MonoBehaviour
 
     public IEnumerator Die(Collider2D other)
     {
+        cam.orientation = CameraFollow.CamOrientation.center;
         transform.parent = null;
         isDying = true;
         col.size = new Vector2(0.38f, col.size.y);
@@ -207,6 +249,9 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.tag == "Ground" && ((rb.velocity.y <= 1 && rb.gravityScale > 0) || (rb.velocity.y >= -1 && rb.gravityScale < 0)))
             isGrounded = true;
+
+        if (collision.tag == "GameEndTrigger")
+            inGameEndTrigger = true;
     }
     private void OnTriggerExit2D(Collider2D collision)
     {

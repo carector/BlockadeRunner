@@ -165,7 +165,7 @@ AnimationClip:
   m_HasMotionFloatCurves: 0
   m_Events:
   - time: 0
-    functionName: PlaySFX
+    functionName: PlaySFXStoppable
     data: 
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0

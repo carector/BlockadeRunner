@@ -59,7 +59,7 @@ AudioMixerGroupController:
   - {fileID: -1075458189385137850}
   - {fileID: -6261422547811648519}
   m_UserColorIndex: 0
-  m_Mute: 1
+  m_Mute: 0
   m_Solo: 0
   m_BypassEffects: 0
 --- !u!244 &-1075458189385137850
@@ -91,7 +91,11 @@ AudioMixerController:
   m_SuspendThreshold: -80
   m_EnableSuspend: 1
   m_UpdateMode: 0
-  m_ExposedParameters: []
+  m_ExposedParameters:
+  - guid: 5db1a095800d0dd4c8df3e3d9f76732c
+    name: MusicVolume
+  - guid: e7904ae899c50314997db04536c8ee2d
+    name: SFXVolume
   m_AudioMixerGroupViews:
   - guids:
     - e2268de66f7659449b75537a8b5a681b
@@ -148,7 +152,7 @@ AudioMixerSnapshotController:
     8f54cc87a8f632c4fa59f4ec8f566726: 6.51
     38944209570c90b4ebe3f648c35ecaac: 0.371
     63b919ca08b968a41bea927ec0272535: 0
-    7edcacec7a787994e87a44eedbf7b310: -7.7
+    7edcacec7a787994e87a44eedbf7b310: -6.3
   m_TransitionOverrides: {}
 --- !u!244 &1098072694990013959
 AudioMixerEffectController:

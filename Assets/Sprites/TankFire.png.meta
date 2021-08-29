@@ -110,6 +110,15 @@ TextureImporter:
   - first:
       213: 4155150875217515438
     second: TankFire_18
+  - first:
+      213: 6899132564870097000
+    second: TankFire_17
+  - first:
+      213: 3405434521709463753
+    second: TankFire_18
+  - first:
+      213: 8012729479746058845
+    second: TankFire_19
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -590,8 +599,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f9e68af2c7a038db0800000000000000
-      internalID: -4790974050100285793
+      spriteID: 868696bb384aebf50800000000000000
+      internalID: 6899132564870097000
       vertices: []
       indices: 
       edges: []
@@ -611,8 +620,29 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ea35e71c4bf0aa930800000000000000
-      internalID: 4155150875217515438
+      spriteID: 9c8485c97a8824f20800000000000000
+      internalID: 3405434521709463753
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TankFire_19
+      rect:
+        serializedVersion: 2
+        x: 1824
+        y: 0
+        width: 96
+        height: 96
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d5a7091320fe23f60800000000000000
+      internalID: 8012729479746058845
       vertices: []
       indices: 
       edges: []

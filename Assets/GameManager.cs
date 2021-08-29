@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using UnityEngine.Audio;
 
 public class GameManager : MonoBehaviour
 {
@@ -10,10 +12,13 @@ public class GameManager : MonoBehaviour
     public bool running;
     public CheckpointScript[] checkpoints;
     public GameObject explosion;
-
+    public string[] creditsLines;
+    public AudioMixer mixer;
+    public Image[] xouts;
     AudioSource footstepSource;
     AudioSource sfxSource;
     AudioSource musicSource;
+    AudioSource stoppableSfx;
 
     Transform cam;
     PlayerController ply;
@@ -23,8 +28,14 @@ public class GameManager : MonoBehaviour
     ExploderScript[] allExploders;
     MovingReverserScript[] allPlatforms;
 
+    TankScript tank;
+
+    bool soundEnabled = true;
+    bool musicEnabled = true;
+
     Image logo;
     Text beginText;
+    Text creditsText;
 
     // Start is called before the first frame update
     void Start()
@@ -32,14 +43,17 @@ public class GameManager : MonoBehaviour
         musicSource = transform.GetChild(0).GetComponent<AudioSource>();
         sfxSource = transform.GetChild(1).GetComponent<AudioSource>();
         footstepSource = transform.GetChild(2).GetComponent<AudioSource>();
+        stoppableSfx = transform.GetChild(3).GetComponent<AudioSource>();
 
         beginText = GameObject.Find("BeginText").GetComponent<Text>();
+        creditsText = GameObject.Find("CreditsText").GetComponent<Text>();
         logo = GameObject.Find("Logo").GetComponent<Image>();
 
         ply = FindObjectOfType<PlayerController>();
         spr = ply.GetComponentInChildren<SpriteRenderer>();
         col = ply.GetComponent<BoxCollider2D>();
         cam = FindObjectOfType<CameraFollow>().transform;
+        tank = FindObjectOfType<TankScript>();
 
         allExploders = FindObjectsOfType<ExploderScript>();
         allPlatforms = FindObjectsOfType<MovingReverserScript>();
@@ -51,6 +65,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         // TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP 
+        /*
         if (Input.GetKey(KeyCode.Alpha1))
             MoveToCheckpoint(0);
         else if (Input.GetKey(KeyCode.Alpha2))
@@ -63,10 +78,13 @@ public class GameManager : MonoBehaviour
             MoveToCheckpoint(4);
         else if (Input.GetKey(KeyCode.Alpha6))
             MoveToCheckpoint(5);
-        else if (Input.GetKey(KeyCode.Alpha7))
+        if (Input.GetKey(KeyCode.Alpha7))
             MoveToCheckpoint(6);
-        else if (Input.GetKey(KeyCode.Alpha8))
+        if (Input.GetKey(KeyCode.Alpha8))
             MoveToCheckpoint(7);
+        */
+
+        
     }
 
     void MoveToCheckpoint(int checkpointNumber)
@@ -77,6 +95,53 @@ public class GameManager : MonoBehaviour
         ply.transform.position = new Vector2(c.transform.position.x, c.transform.position.y - 0.5f);
     }
 
+    public IEnumerator PlayCredits()
+    {
+        for (int i = 0; i < creditsLines.Length; i++)
+        {
+            creditsText.text = creditsLines[i];
+            yield return new WaitForSeconds(4);
+            creditsText.text = "";
+            yield return new WaitForSeconds(1);
+        }
+
+        yield return new WaitForSeconds(4);
+        SceneManager.LoadScene(1);
+    }
+
+    public void ToggleMusic()
+    {
+        musicEnabled = !musicEnabled;
+
+        Color c = Color.clear;
+        float volume = 0;
+        if (!musicEnabled)
+        {
+            volume = -80;
+            c = Color.white;
+        }
+
+        mixer.SetFloat("MusicVolume", volume);
+        xouts[0].color = c;
+    }
+
+    public void ToggleSound()
+    {
+        soundEnabled = !soundEnabled;
+
+        Color c = Color.clear;
+        float volume = 0;
+        if (!soundEnabled)
+        {
+            volume = -80;
+            c = Color.white;
+        }
+
+        mixer.SetFloat("SFXVolume", volume);
+        xouts[1].color = c;
+    }
+
+
     IEnumerator FirstTimeSetup()
     {
         running = false;
@@ -85,9 +150,9 @@ public class GameManager : MonoBehaviour
         PlayMusic();
         beginText.color = Color.clear;
         StartCoroutine(FadeOutLogo());
-        //yield return new WaitForSeconds(6.4f);
-        //Instantiate(explosion, ply.transform.position, Quaternion.identity);
-        //yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(6.4f);
+        Instantiate(explosion, ply.transform.position, Quaternion.identity);
+        yield return new WaitForSeconds(0.5f);
         spr.color = Color.white;
         running = true;
     }
@@ -120,6 +185,11 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < allPlatforms.Length; i++)
             allPlatforms[i].ResetPlatform();
 
+        if (tank.activated)
+            tank.ResetTank();
+
+        sfxSource.Stop();
+
         col.size = new Vector2(0.68f, col.size.y);
         spr.color = Color.white;
         cam.transform.position = new Vector3(ply.transform.position.x, ply.transform.position.y, cam.transform.position.z);
@@ -139,6 +209,24 @@ public class GameManager : MonoBehaviour
     public void PlaySFX(AudioClip sfx)
     {
         sfxSource.PlayOneShot(sfx);
+    }
+
+    public void StopMusic()
+    {
+        musicSource.Stop();
+    }
+
+    public void PlayMusic(AudioClip music)
+    {
+        musicSource.Stop();
+        musicSource.clip = music;
+        musicSource.Play();
+    }
+
+    public void PlaySFXStoppable(AudioClip sfx)
+    {
+        stoppableSfx.Stop();
+        stoppableSfx.PlayOneShot(sfx);
     }
 
     public void PlayFootstepSFX(AudioClip sfx)

@@ -28,13 +28,13 @@ public class CameraFollow : MonoBehaviour
         switch(orientation)
         {
             case CamOrientation.left:
-                cam.transform.localPosition = Vector2.Lerp(cam.transform.localPosition, new Vector2(-5, 0), 0.01f);
+                cam.transform.localPosition = Vector2.Lerp(cam.transform.localPosition, new Vector2(-5, 0), 0.025f);
                 break;
             case CamOrientation.center:
-                cam.transform.localPosition = Vector2.Lerp(cam.transform.localPosition, Vector2.zero, 0.01f);
+                cam.transform.localPosition = Vector2.Lerp(cam.transform.localPosition, Vector2.zero, 0.075f);
                 break;
             case CamOrientation.right:
-                cam.transform.localPosition = Vector2.Lerp(cam.transform.localPosition, new Vector2(5, 0), 0.01f);
+                cam.transform.localPosition = Vector2.Lerp(cam.transform.localPosition, new Vector2(5, 0), 0.025f);
                 break;
         }
         transform.position = new Vector3(target.transform.position.x, transform.position.y, transform.position.z);
