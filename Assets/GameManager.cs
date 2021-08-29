@@ -21,6 +21,7 @@ public class GameManager : MonoBehaviour
     BoxCollider2D col;
 
     ExploderScript[] allExploders;
+    MovingReverserScript[] allPlatforms;
 
     Image logo;
     Text beginText;
@@ -38,9 +39,10 @@ public class GameManager : MonoBehaviour
         ply = FindObjectOfType<PlayerController>();
         spr = ply.GetComponentInChildren<SpriteRenderer>();
         col = ply.GetComponent<BoxCollider2D>();
-        cam = FindObjectOfType<Camera>().transform;
+        cam = FindObjectOfType<CameraFollow>().transform;
 
         allExploders = FindObjectsOfType<ExploderScript>();
+        allPlatforms = FindObjectsOfType<MovingReverserScript>();
 
         StartCoroutine(FirstTimeSetup());
     }
@@ -59,6 +61,12 @@ public class GameManager : MonoBehaviour
             MoveToCheckpoint(3);
         else if (Input.GetKey(KeyCode.Alpha5))
             MoveToCheckpoint(4);
+        else if (Input.GetKey(KeyCode.Alpha6))
+            MoveToCheckpoint(5);
+        else if (Input.GetKey(KeyCode.Alpha7))
+            MoveToCheckpoint(6);
+        else if (Input.GetKey(KeyCode.Alpha8))
+            MoveToCheckpoint(7);
     }
 
     void MoveToCheckpoint(int checkpointNumber)
@@ -108,6 +116,9 @@ public class GameManager : MonoBehaviour
 
         for (int i = 0; i < allExploders.Length; i++)
             allExploders[i].ResetSelf();
+
+        for (int i = 0; i < allPlatforms.Length; i++)
+            allPlatforms[i].ResetPlatform();
 
         col.size = new Vector2(0.68f, col.size.y);
         spr.color = Color.white;

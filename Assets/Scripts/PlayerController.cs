@@ -17,6 +17,7 @@ public class PlayerController : MonoBehaviour
     public bool isFrozen;
     public GameObject jumpDirt;
 
+    bool canFlipGravity = true;
     int storedDir;
 
     IEnumerator flipCoroutine;
@@ -94,6 +95,13 @@ public class PlayerController : MonoBehaviour
             yield return null;
     }
 
+    IEnumerator FlipGravityDelay()
+    {
+        canFlipGravity = false;
+        yield return new WaitForSeconds(0.66f);
+        canFlipGravity = true;
+    }
+
     public void FreezePlayer(bool frozen)
     {
         if (frozen)
@@ -116,8 +124,10 @@ public class PlayerController : MonoBehaviour
 
     public void InvertGravity()
     {
+        gm.PlaySFX(gm.sfx[6]);
         transform.localScale = new Vector2(1, transform.localScale.y * -1f);
         rb.gravityScale *= -1;
+        StartCoroutine(FlipGravityDelay());
     }
 
     public void ResetGravity()
@@ -186,7 +196,7 @@ public class PlayerController : MonoBehaviour
                 StartCoroutine(Die(other));
             }
         }
-        if (other.tag == "GravityInverter")
+        if (other.tag == "GravityInverter" && canFlipGravity)
             InvertGravity();
         else if (other.tag == "GravityResetter")
             ResetGravity();
