@@ -19,11 +19,16 @@ public class PlayerController : MonoBehaviour
     public GameObject jumpDirt;
     public GameObject cleaver;
 
+    [HideInInspector]
+    public bool inEndgameSequence;
+
     bool canFlipGravity = true;
     bool inGameEndTrigger;
     int storedDir;
 
     IEnumerator flipCoroutine;
+    IEnumerator coyoteFramesCoroutine;
+    IEnumerator deathCoroutine;
 
     // Start is called before the first frame update
     void Start()
@@ -55,7 +60,7 @@ public class PlayerController : MonoBehaviour
                     CheckAndPlayClip("Player_Jump", anim);
             }
 
-            if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+            if (gm.PressingInput() && isGrounded)
             {
                 if (inGameEndTrigger)
                 {
@@ -86,6 +91,7 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator EndSoundEffects()
     {
+        inEndgameSequence = true;
         yield return new WaitForSeconds(0.25f);
         gm.PlaySFX(gm.sfx[8]);
         yield return new WaitForSeconds(0.25f);
@@ -131,7 +137,7 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator WaitForSpacePress()
     {
-        while (!Input.GetKeyDown(KeyCode.Space) || isFrozen)
+        while (!gm.PressingInput() || isFrozen)
             yield return null;
     }
 
@@ -168,6 +174,7 @@ public class PlayerController : MonoBehaviour
         transform.localScale = new Vector2(1, transform.localScale.y * -1f);
         rb.gravityScale *= -1;
         transform.localPosition += new Vector3(0, 0.5f * Mathf.Sign(rb.gravityScale));
+        cam.transform.localPosition += new Vector3(0, 0.5f * Mathf.Sign(rb.gravityScale));
         StartCoroutine(FlipGravityDelay());
     }
 
@@ -217,7 +224,20 @@ public class PlayerController : MonoBehaviour
         CheckAndPlayClip("Player_Idle", anim);
         ResetGravity();
         rb.isKinematic = false;
-        gm.StartCoroutine(gm.ResetToCheckpoint());
+        gm.StartCoroutine(gm.ResetToCheckpointCoroutine());
+    }
+
+    public void Reset()
+    {
+        if (deathCoroutine != null)
+            StopCoroutine(deathCoroutine);
+        isDying = false;
+        rb.isKinematic = false;
+        cam.orientation = CameraFollow.CamOrientation.center;
+        transform.parent = null;
+        rb.velocity = Vector2.zero;
+        CheckAndPlayClip("Player_Idle", anim);
+        ResetGravity();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -235,7 +255,8 @@ public class PlayerController : MonoBehaviour
             }
             if (other.tag == "DeathTrigger")
             {
-                StartCoroutine(Die(other));
+                deathCoroutine = Die(other);
+                StartCoroutine(deathCoroutine);
             }
         }
         if (other.tag == "GravityInverter" && canFlipGravity)
@@ -256,8 +277,27 @@ public class PlayerController : MonoBehaviour
     private void OnTriggerExit2D(Collider2D collision)
     {
         if (collision.tag == "Ground")
-            isGrounded = false;
+        {
+            if (coyoteFramesCoroutine != null)
+                StopCoroutine(coyoteFramesCoroutine);
+            coyoteFramesCoroutine = CoyoteFrames();
+            StartCoroutine(coyoteFramesCoroutine);
+        }
+
+        if (collision.tag == "GameEndTrigger")
+            inGameEndTrigger = false;
     }
+
+    IEnumerator CoyoteFrames()
+    {
+        for (int i = 0; i < 14; i++)
+            yield return new WaitForEndOfFrame();
+
+        isGrounded = false;
+        print("Finished");
+        coyoteFramesCoroutine = null;
+    }
+
     public void CheckAndPlayClip(string clipName, Animator anim)
     {
         if (!anim.GetCurrentAnimatorStateInfo(0).IsName(clipName))

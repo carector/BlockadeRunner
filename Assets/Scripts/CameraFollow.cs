@@ -22,6 +22,11 @@ public class CameraFollow : MonoBehaviour
         cam = transform.GetChild(0);
     }
 
+    public void ResetOrientationInstant()
+    {
+        cam.transform.localPosition = Vector2.zero;
+    }
+
     // Update is called once per frame
     void LateUpdate()
     {
@@ -37,8 +42,8 @@ public class CameraFollow : MonoBehaviour
                 cam.transform.localPosition = Vector2.Lerp(cam.transform.localPosition, new Vector2(5, 0), 0.025f);
                 break;
         }
-        transform.position = new Vector3(target.transform.position.x, transform.position.y, transform.position.z);
-        transform.position = Vector3.Lerp(transform.position, new Vector3(transform.position.x, target.transform.position.y, transform.position.z), 0.05f);
+        transform.position = new Vector3(target.transform.position.x, target.transform.position.y, transform.position.z);
+        //transform.position = Vector3.Lerp(transform.position, new Vector3(transform.position.x, target.transform.position.y, transform.position.z), 0.25f);
     }
 
     public void ShakeCamera(int iterations)
