@@ -32,7 +32,7 @@ public class LoadMainLevel : MonoBehaviour
         focusText.color = Color.clear;
         vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, "TubLogo.mp4");
         vp.Play();
-        yield return new WaitForSeconds(4);
+        yield return new WaitForSeconds(4.25f);
         SceneManager.LoadScene(1);
     }
 }

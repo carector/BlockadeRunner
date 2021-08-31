@@ -231,6 +231,9 @@ public class PlayerController : MonoBehaviour
     {
         if (deathCoroutine != null)
             StopCoroutine(deathCoroutine);
+        if(flipCoroutine != null)
+            StopCoroutine(flipCoroutine);
+        isGrabbing = false;
         isDying = false;
         rb.isKinematic = false;
         cam.orientation = CameraFollow.CamOrientation.center;

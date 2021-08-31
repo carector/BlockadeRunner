@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.Audio;
-
+using UnityEngine.U2D;
 public class GameManager : MonoBehaviour
 {
     public AudioClip[] sfx;
@@ -21,6 +21,7 @@ public class GameManager : MonoBehaviour
     AudioSource stoppableSfx;
 
     CameraFollow cam;
+    PixelPerfectCamera ppcam; // nice
     PlayerController ply;
     SpriteRenderer spr;
     BoxCollider2D col;
@@ -62,6 +63,7 @@ public class GameManager : MonoBehaviour
         spr = ply.GetComponentInChildren<SpriteRenderer>();
         col = ply.GetComponent<BoxCollider2D>();
         cam = FindObjectOfType<CameraFollow>();
+        ppcam = FindObjectOfType<PixelPerfectCamera>();
         tank = FindObjectOfType<TankScript>();
         heli = FindObjectOfType<HelicopterScript>();
 
@@ -249,9 +251,12 @@ public class GameManager : MonoBehaviour
             // Make sure our touch is within the bounds of the screen so we don't jump when we press a UI button
             Touch touch = Input.GetTouch(0);
             Vector2 screenPos = touch.position;
-            int screenWidth = Screen.width;
-            //int ratio = 
-            if (screenPos.x >= 100 && screenPos.x <= 1180 && !Input.GetMouseButtonUp(0))
+
+            //float touchableWidth = ppcam.refResolutionX * ((float)Screen.height / ppcam.refResolutionY); // Gets ratio of cam space to full window
+            //float offset = (Screen.width - touchableWidth) / 2;
+            float offset = Screen.height - (Screen.height / 4f);
+
+            if (screenPos.y <= offset && !Input.GetMouseButtonUp(0))
                 value = true;
         }
         return value;

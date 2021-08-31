@@ -24,8 +24,8 @@ public class TankScript : MonoBehaviour
 
     Vector3 initialPos;
 
-    IEnumerator aimCoroutine;
-    IEnumerator shootCoroutine;
+    IEnumerator aimCoroutine = null;
+    IEnumerator shootCoroutine = null;
 
     // Start is called before the first frame update
     void Start()
@@ -69,6 +69,9 @@ public class TankScript : MonoBehaviour
         if(shootCoroutine != null)
             StopCoroutine(shootCoroutine);
 
+        aimCoroutine = null;
+        shootCoroutine = null;
+
         print("RESET TANK");
         activated = false;
         rb.velocity = Vector2.zero;
@@ -96,8 +99,12 @@ public class TankScript : MonoBehaviour
                     yield break;
             }
 
-            aimCoroutine = AimCrosshair();
-            StartCoroutine(aimCoroutine);
+            if (aimCoroutine == null)
+            {
+                aimCoroutine = AimCrosshair();
+                StartCoroutine(aimCoroutine);
+            }
+
             yield return new WaitForSecondsRealtime(2f);
 
             if (!activated || ply.isDying)
@@ -120,7 +127,7 @@ public class TankScript : MonoBehaviour
 
     IEnumerator AimCrosshair()
     {
-        gm.PlaySFXStoppable(gm.sfx[7]);
+        gm.PlaySFX(gm.sfx[7]);
         crosshair.transform.localPosition = new Vector2(3.25f, 2.5f);
         anim.Play("TankLockOn");
         float time = 0;
@@ -129,11 +136,12 @@ public class TankScript : MonoBehaviour
             if (!activated || ply.isDying)
                 yield break;
 
-            crosshair.position = Vector2.Lerp(crosshair.position, Vector2.MoveTowards(crosshair.position, ply.transform.position, Vector2.Distance(crosshair.position, ply.transform.position) / 10f), 0.1f);
+            crosshair.position = Vector2.Lerp(crosshair.position, Vector2.MoveTowards(crosshair.position, ply.transform.position, Vector2.Distance(crosshair.position, ply.transform.position) / 5f), 0.1f);
             RotateCannon();
             time += Time.fixedDeltaTime;
             yield return new WaitForFixedUpdate();
         }
+        aimCoroutine = null;
         //cam.orientation = CameraFollow.CamOrientation.left;
     }
 
