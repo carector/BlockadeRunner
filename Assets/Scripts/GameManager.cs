@@ -20,6 +20,17 @@ public class GameManager : MonoBehaviour
     AudioSource musicSource;
     AudioSource stoppableSfx;
 
+    [System.Serializable]
+    public class PlayerStats
+    {
+        public int numDeaths;
+        public float runtime;
+    }
+
+    PlayerStats pStats;
+
+    public io.newgrounds.core ngio_core;
+
     CameraFollow cam;
     PixelPerfectCamera ppcam; // nice
     PlayerController ply;
@@ -34,16 +45,22 @@ public class GameManager : MonoBehaviour
 
     bool soundEnabled = true;
     bool musicEnabled = true;
+    public bool timerActive = false;
 
     int storedScreenTouches;
 
     Image logo;
     Text beginText;
     Text creditsText;
+    Text timerText;
+    Text deathsText;
 
     // Start is called before the first frame update
     void Start()
     {
+        ngio_core = FindObjectOfType<io.newgrounds.core>();
+        pStats = new PlayerStats();
+
         Application.targetFrameRate = 60;
         musicSource = transform.GetChild(0).GetComponent<AudioSource>();
         sfxSource = transform.GetChild(1).GetComponent<AudioSource>();
@@ -52,11 +69,15 @@ public class GameManager : MonoBehaviour
 
         beginText = GameObject.Find("BeginText").GetComponent<Text>();
         creditsText = GameObject.Find("CreditsText").GetComponent<Text>();
+        timerText = GameObject.Find("TimerText").GetComponent<Text>();
+        deathsText = GameObject.Find("DeathsText").GetComponent<Text>();
+        timerText.color = Color.clear;
+        deathsText.color = Color.clear;
         logo = GameObject.Find("Logo").GetComponent<Image>();
 
-        if(Application.platform == RuntimePlatform.Android)
+        if (Application.platform == RuntimePlatform.Android)
             beginText.text = "Touch the screen to begin";
-        if(Application.platform == RuntimePlatform.WebGLPlayer)
+        if (Application.platform == RuntimePlatform.WebGLPlayer)
             beginText.text = "Press space or touch the screen to begin";
 
         ply = FindObjectOfType<PlayerController>();
@@ -103,10 +124,65 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void FixedUpdate()
+    {
+        if (timerActive)
+        {
+            deathsText.text = "Deaths: " + pStats.numDeaths.ToString();
+
+            pStats.runtime += Time.deltaTime;
+            float timer = pStats.runtime;
+            int minutes = Mathf.FloorToInt(timer / 60F);
+            int seconds = Mathf.FloorToInt(timer - minutes * 60);
+            int milliseconds = Mathf.FloorToInt(((timer - (minutes * 60) - seconds)) * 100);
+            string niceTime = string.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, milliseconds);
+            timerText.text = niceTime;
+        }
+    }
+
     private void LateUpdate()
     {
         storedScreenTouches = Input.touchCount;
     }
+
+    public int GetPlayerDeaths()
+    {
+        return pStats.numDeaths;
+    }
+
+    public void IncreasePlayerDeaths()
+    {
+        pStats.numDeaths++;
+    }
+
+    public float GetPlayerTime()
+    {
+        return pStats.runtime;
+    }
+
+    public void UnlockMedal(int id)
+    {
+        io.newgrounds.components.Medal.unlock medalToUnlock = new io.newgrounds.components.Medal.unlock();
+        medalToUnlock.id = id;
+        medalToUnlock.callWith(ngio_core, OnMedalUnlocked);
+    }
+
+    // Times: 10717
+    // Deaths: 10718
+    public void PostScore(int id, int value)
+    {
+        io.newgrounds.components.ScoreBoard.postScore scoreToPost = new io.newgrounds.components.ScoreBoard.postScore();
+        scoreToPost.id = id;
+        scoreToPost.value = value;
+        scoreToPost.callWith(ngio_core);
+    }
+
+    void OnMedalUnlocked(io.newgrounds.results.Medal.unlock result)
+    {
+        io.newgrounds.objects.medal medal = result.medal;
+        Debug.Log("Medal Unlocked: " + medal.name + " (" + medal.value + " points)");
+    }
+
 
     void MoveToCheckpoint(int checkpointNumber)
     {
@@ -175,6 +251,9 @@ public class GameManager : MonoBehaviour
         Instantiate(explosion, ply.transform.position, Quaternion.identity);
         yield return new WaitForSeconds(0.5f);
         spr.color = Color.white;
+        deathsText.color = Color.white;
+        timerText.color = Color.white;
+        timerActive = true;
         running = true;
     }
 

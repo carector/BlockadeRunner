@@ -16,6 +16,7 @@ public class PlayerController : MonoBehaviour
     public bool isGrabbing;
     public bool isDying;
     public bool isFrozen;
+    public LayerMask groundCollisionMask;
     public GameObject jumpDirt;
     public GameObject cleaver;
 
@@ -50,6 +51,8 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        GroundRaycast();
+
         if (gm.running && !isDying && !isFrozen)
         {
             if (!isGrabbing)
@@ -64,6 +67,10 @@ public class PlayerController : MonoBehaviour
             {
                 if (inGameEndTrigger)
                 {
+                    // Stop timer and submit score
+                    gm.timerActive = false;
+
+
                     FindObjectOfType<TankScript>().dontSpawnProjectiles = true;
                     gm.StopMusic();
                     isFrozen = true;
@@ -75,7 +82,7 @@ public class PlayerController : MonoBehaviour
                     rb.velocity = new Vector2(14.5f, 13.5f * Mathf.Sign(rb.gravityScale));
                     isGrounded = false;
                     cam.orientation = CameraFollow.CamOrientation.left;
-                    StartCoroutine(EndSoundEffects());
+                    StartCoroutine(EndGameSequence());
                 }
                 else
                 {
@@ -89,7 +96,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    IEnumerator EndSoundEffects()
+    IEnumerator EndGameSequence()
     {
         inEndgameSequence = true;
         yield return new WaitForSeconds(0.25f);
@@ -100,6 +107,13 @@ public class PlayerController : MonoBehaviour
         Time.timeScale = 1;
         cam.orientation = CameraFollow.CamOrientation.center;
         yield return new WaitForSeconds(6);
+
+        // Issue player rewards
+        gm.UnlockMedal(65007);
+        if (gm.GetPlayerDeaths() == 0)
+            gm.UnlockMedal(65010);
+
+        // Submit playtime to leaderboard
         StartCoroutine(gm.PlayCredits());
     }
 
@@ -110,6 +124,14 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator GrabAndFlip(Transform t)
     {
+        isGrabbing = true;
+        if (coyoteFramesCoroutine != null)
+        {
+            StopCoroutine(coyoteFramesCoroutine);
+            coyoteFramesCoroutine = null;
+            isGrounded = false;
+        }
+
         transform.position = new Vector2(t.position.x - dir, transform.position.y);
         rb.velocity = Vector2.zero;
         dir *= -1;
@@ -133,6 +155,7 @@ public class PlayerController : MonoBehaviour
             rb.velocity = new Vector2(rb.velocity.x, 13.5f * Mathf.Sign(rb.gravityScale));
         }
         isGrabbing = false;
+        flipCoroutine = null;
     }
 
     IEnumerator WaitForSpacePress()
@@ -186,14 +209,20 @@ public class PlayerController : MonoBehaviour
 
     public IEnumerator Die(Collider2D other)
     {
+        isDying = true;
+
         cam.orientation = CameraFollow.CamOrientation.center;
         transform.parent = null;
-        isDying = true;
+        gm.PostScore(10718, 1);
+        gm.IncreasePlayerDeaths();
+        if (gm.GetPlayerDeaths() == 20)
+            gm.UnlockMedal(65009);
+
         col.size = new Vector2(0.38f, col.size.y);
         Vector3 point = other.ClosestPoint(transform.position);
         Vector3 diff = transform.position - point;
 
-        if(isGrabbing)
+        if (isGrabbing)
         {
             isGrabbing = false;
             dir *= -1;
@@ -231,7 +260,7 @@ public class PlayerController : MonoBehaviour
     {
         if (deathCoroutine != null)
             StopCoroutine(deathCoroutine);
-        if(flipCoroutine != null)
+        if (flipCoroutine != null)
             StopCoroutine(flipCoroutine);
         isGrabbing = false;
         isDying = false;
@@ -247,9 +276,9 @@ public class PlayerController : MonoBehaviour
     {
         if (!isDying)
         {
-            if ((other.tag == "Reverser" || other.tag == "Exploder") && !isGrabbing)
+            if (flipCoroutine == null && (other.tag == "Reverser" || other.tag == "Exploder") && !isGrabbing)
             {
-                if(other.tag == "Exploder")
+                if (other.tag == "Exploder")
                     StartCoroutine(other.GetComponentInParent<ExploderScript>().TriggerExplosion());
 
                 isGrabbing = true;
@@ -258,6 +287,7 @@ public class PlayerController : MonoBehaviour
             }
             if (other.tag == "DeathTrigger")
             {
+                isDying = true;
                 deathCoroutine = Die(other);
                 StartCoroutine(deathCoroutine);
             }
@@ -269,24 +299,30 @@ public class PlayerController : MonoBehaviour
 
     }
 
+    void GroundRaycast()
+    {
+        RaycastHit2D hit = Physics2D.Raycast(new Vector2(transform.position.x, transform.position.y - transform.localScale.y * 0.9f), Vector2.down * transform.localScale.y, 0.35f, groundCollisionMask);
+        Debug.DrawRay(new Vector2(transform.position.x, transform.position.y - transform.localScale.y * 0.9f), Vector2.down * transform.localScale.y * 0.35f, Color.red, Time.deltaTime);
+        //print(hit.transform);
+        if (hit.collider != null && hit.collider.tag == "Ground" && flipCoroutine == null)
+        {
+            if (((rb.velocity.y <= 1 && rb.gravityScale > 0) || (rb.velocity.y >= -1 && rb.gravityScale < 0)))
+                isGrounded = true;
+        }
+        else if (isGrounded && coyoteFramesCoroutine == null)
+        {
+            coyoteFramesCoroutine = CoyoteFrames();
+            StartCoroutine(coyoteFramesCoroutine);
+        }
+
+    }
     private void OnTriggerStay2D(Collider2D collision)
     {
-        if (collision.tag == "Ground" && ((rb.velocity.y <= 1 && rb.gravityScale > 0) || (rb.velocity.y >= -1 && rb.gravityScale < 0)))
-            isGrounded = true;
-
         if (collision.tag == "GameEndTrigger")
             inGameEndTrigger = true;
     }
     private void OnTriggerExit2D(Collider2D collision)
     {
-        if (collision.tag == "Ground")
-        {
-            if (coyoteFramesCoroutine != null)
-                StopCoroutine(coyoteFramesCoroutine);
-            coyoteFramesCoroutine = CoyoteFrames();
-            StartCoroutine(coyoteFramesCoroutine);
-        }
-
         if (collision.tag == "GameEndTrigger")
             inGameEndTrigger = false;
     }

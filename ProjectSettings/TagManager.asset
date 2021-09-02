@@ -11,6 +11,7 @@ TagManager:
   - GravityInverter
   - GameEndTrigger
   - TankCannon
+  - MobileReverser
   layers:
   - Default
   - TransparentFX
