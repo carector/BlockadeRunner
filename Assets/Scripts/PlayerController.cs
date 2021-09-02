@@ -114,6 +114,7 @@ public class PlayerController : MonoBehaviour
             gm.UnlockMedal(65010);
 
         // Submit playtime to leaderboard
+        gm.PostScore(10717, Mathf.RoundToInt(gm.GetPlayerTime() * 1000));
         StartCoroutine(gm.PlayCredits());
     }
 
@@ -127,6 +128,7 @@ public class PlayerController : MonoBehaviour
         isGrabbing = true;
         if (coyoteFramesCoroutine != null)
         {
+            //print("Coyote frames coroutine detected - stopping");
             StopCoroutine(coyoteFramesCoroutine);
             coyoteFramesCoroutine = null;
             isGrounded = false;
@@ -211,6 +213,18 @@ public class PlayerController : MonoBehaviour
     {
         isDying = true;
 
+        if (coyoteFramesCoroutine != null)
+        {
+            StopCoroutine(coyoteFramesCoroutine);
+            coyoteFramesCoroutine = null;
+        }
+
+        if (flipCoroutine != null)
+        {
+            StopCoroutine(flipCoroutine);
+            flipCoroutine = null;
+        }
+
         cam.orientation = CameraFollow.CamOrientation.center;
         transform.parent = null;
         gm.PostScore(10718, 1);
@@ -227,7 +241,6 @@ public class PlayerController : MonoBehaviour
             isGrabbing = false;
             dir *= -1;
             rb.isKinematic = false;
-            StopCoroutine(flipCoroutine);
         }
 
         // Knock back player
@@ -241,8 +254,12 @@ public class PlayerController : MonoBehaviour
         while (!isGrounded)
             yield return null;
 
+        //while (Mathf.Abs(rb.velocity.y) >= 1f)
+        //yield return null;
+
         rb.isKinematic = true;
         rb.velocity = Vector2.zero;
+        //transform.position += Vector3.down * transform.localScale.y * 0.2f;
         CheckAndPlayClip("Player_Down", anim);
         yield return new WaitForSeconds(0.5f);
         gm.PlaySFX(gm.sfx[3]);
@@ -259,11 +276,23 @@ public class PlayerController : MonoBehaviour
     public void Reset()
     {
         if (deathCoroutine != null)
+        {
             StopCoroutine(deathCoroutine);
+            deathCoroutine = null;
+        }
         if (flipCoroutine != null)
+        {
             StopCoroutine(flipCoroutine);
+            flipCoroutine = null;
+        }
+        if (coyoteFramesCoroutine != null)
+        {
+            StopCoroutine(coyoteFramesCoroutine);
+            coyoteFramesCoroutine = null;
+        }
         isGrabbing = false;
         isDying = false;
+        isGrounded = true;
         rb.isKinematic = false;
         cam.orientation = CameraFollow.CamOrientation.center;
         transform.parent = null;
@@ -301,18 +330,34 @@ public class PlayerController : MonoBehaviour
 
     void GroundRaycast()
     {
-        RaycastHit2D hit = Physics2D.Raycast(new Vector2(transform.position.x, transform.position.y - transform.localScale.y * 0.9f), Vector2.down * transform.localScale.y, 0.35f, groundCollisionMask);
-        Debug.DrawRay(new Vector2(transform.position.x, transform.position.y - transform.localScale.y * 0.9f), Vector2.down * transform.localScale.y * 0.35f, Color.red, Time.deltaTime);
-        //print(hit.transform);
-        if (hit.collider != null && hit.collider.tag == "Ground" && flipCoroutine == null)
+        RaycastHit2D hit = Physics2D.Raycast(new Vector2(transform.position.x, transform.position.y - transform.localScale.y * 0.9f), Vector2.down * transform.localScale.y, 0.5f, groundCollisionMask);
+        Debug.DrawRay(new Vector2(transform.position.x, transform.position.y - transform.localScale.y * 0.9f), Vector2.down * transform.localScale.y * 0.5f, Color.red, Time.deltaTime);
+
+        if (flipCoroutine == null)
         {
-            if (((rb.velocity.y <= 1 && rb.gravityScale > 0) || (rb.velocity.y >= -1 && rb.gravityScale < 0)))
-                isGrounded = true;
-        }
-        else if (isGrounded && coyoteFramesCoroutine == null)
-        {
-            coyoteFramesCoroutine = CoyoteFrames();
-            StartCoroutine(coyoteFramesCoroutine);
+            if (hit.collider != null && hit.collider.tag == "Ground")
+            {
+                if (((rb.velocity.y <= 1 && rb.gravityScale > 0) || (rb.velocity.y >= -1 && rb.gravityScale < 0)))
+                {
+                    if (coyoteFramesCoroutine != null)
+                    {
+                        //print("Stopped coyote frames");
+                        StopCoroutine(coyoteFramesCoroutine);
+                        coyoteFramesCoroutine = null;
+                    }
+
+                    if(Mathf.Abs(rb.velocity.y) <= 0.25f)
+                        transform.position = new Vector2(transform.position.x, hit.point.y + transform.localScale.y);
+                    isGrounded = true;
+                }
+
+            }
+            else if (isGrounded && coyoteFramesCoroutine == null)
+            {
+                //print("Started coyote frames");
+                coyoteFramesCoroutine = CoyoteFrames();
+                StartCoroutine(coyoteFramesCoroutine);
+            }
         }
 
     }
@@ -333,7 +378,7 @@ public class PlayerController : MonoBehaviour
             yield return new WaitForEndOfFrame();
 
         isGrounded = false;
-        print("Finished");
+        //print("Finished");
         coyoteFramesCoroutine = null;
     }
 

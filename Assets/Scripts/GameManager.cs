@@ -164,7 +164,8 @@ public class GameManager : MonoBehaviour
     {
         io.newgrounds.components.Medal.unlock medalToUnlock = new io.newgrounds.components.Medal.unlock();
         medalToUnlock.id = id;
-        medalToUnlock.callWith(ngio_core, OnMedalUnlocked);
+        medalToUnlock.callWith(ngio_core);
+        print("Unlocked medal " + id);
     }
 
     // Times: 10717
@@ -175,6 +176,7 @@ public class GameManager : MonoBehaviour
         scoreToPost.id = id;
         scoreToPost.value = value;
         scoreToPost.callWith(ngio_core);
+        print("Posted score " + id);
     }
 
     void OnMedalUnlocked(io.newgrounds.results.Medal.unlock result)
