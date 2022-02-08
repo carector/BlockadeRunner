@@ -10,7 +10,6 @@ public class GameManager : MonoBehaviour
     public AudioClip[] sfx;
     public int checkpoint = 0;
     public bool running;
-    public CheckpointScript[] checkpoints;
     public GameObject explosion;
     public string[] creditsLines;
     public AudioMixer mixer;
@@ -20,14 +19,17 @@ public class GameManager : MonoBehaviour
     AudioSource musicSource;
     AudioSource stoppableSfx;
 
+    LevelData lData;
+
     [System.Serializable]
     public class PlayerStats
     {
         public int numDeaths;
         public float runtime;
+        public Dictionary<float, Vector2> ghostInputTimes = new Dictionary<float, Vector2>(); // float represents time of jump input, vector3 represents player position at time of jump input
     }
 
-    PlayerStats pStats;
+    public PlayerStats pStats;
 
     public io.newgrounds.core ngio_core;
 
@@ -59,6 +61,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         ngio_core = FindObjectOfType<io.newgrounds.core>();
+        lData = FindObjectOfType<LevelData>();
         pStats = new PlayerStats();
 
         Application.targetFrameRate = 60;
@@ -160,6 +163,16 @@ public class GameManager : MonoBehaviour
         return pStats.runtime;
     }
 
+    public void AddInputToGhostData(float time, Vector3 position)
+    {
+        if (running && !pStats.ghostInputTimes.ContainsKey(time))
+        {
+            print(time);
+            print(position);
+            pStats.ghostInputTimes.Add(time, position);
+        }
+    }
+
     public void UnlockMedal(int id)
     {
         io.newgrounds.components.Medal.unlock medalToUnlock = new io.newgrounds.components.Medal.unlock();
@@ -188,7 +201,7 @@ public class GameManager : MonoBehaviour
 
     void MoveToCheckpoint(int checkpointNumber)
     {
-        CheckpointScript c = checkpoints[checkpointNumber];
+        CheckpointScript c = lData.checkpoints[checkpointNumber];
         ply.dir = c.dir;
         spr.flipX = (c.dir == -1);
         ply.transform.position = new Vector2(c.transform.position.x, c.transform.position.y - 0.5f);
@@ -248,8 +261,9 @@ public class GameManager : MonoBehaviour
         yield return WaitForInputPress();
         PlayMusic();
         beginText.color = Color.clear;
-        StartCoroutine(FadeOutLogo());
-        yield return new WaitForSeconds(6.4f);
+        logo.color = Color.clear;
+        //StartCoroutine(FadeOutLogo());
+        //yield return new WaitForSeconds(6.4f);
         Instantiate(explosion, ply.transform.position, Quaternion.identity);
         yield return new WaitForSeconds(0.5f);
         spr.color = Color.white;
@@ -325,8 +339,8 @@ public class GameManager : MonoBehaviour
     public bool PressingInput()
     {
         bool value = false;
-        if (Input.GetKeyDown(KeyCode.Space))
-            return true;
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
+            value = true;
         else if (Input.touchCount > storedScreenTouches)
         {
             // Make sure our touch is within the bounds of the screen so we don't jump when we press a UI button
@@ -340,6 +354,9 @@ public class GameManager : MonoBehaviour
             if (screenPos.y <= offset && !Input.GetMouseButtonUp(0))
                 value = true;
         }
+
+        if (value && (ply.isGrounded || ply.isGrabbing))
+            AddInputToGhostData(pStats.runtime, ply.transform.position);
         return value;
     }
 

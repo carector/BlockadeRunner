@@ -374,7 +374,7 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator CoyoteFrames()
     {
-        for (int i = 0; i < 14; i++)
+        for (int i = 0; i < 8; i++)
             yield return new WaitForEndOfFrame();
 
         isGrounded = false;

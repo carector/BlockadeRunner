@@ -13,6 +13,7 @@ public class CheckpointScript : MonoBehaviour
     GameManager gm;
     PlayerController ply;
     SpriteRenderer spr;
+    LevelData l;
 
     Text checkText;
     Text pointText;
@@ -23,6 +24,7 @@ public class CheckpointScript : MonoBehaviour
         gm = FindObjectOfType<GameManager>();
         ply = FindObjectOfType<PlayerController>();
         spr = GetComponent<SpriteRenderer>();
+        l = FindObjectOfType<LevelData>();
         checkText = transform.GetChild(0).GetChild(0).GetComponent<Text>();
         pointText = transform.GetChild(0).GetChild(1).GetComponent<Text>();
 
@@ -38,7 +40,8 @@ public class CheckpointScript : MonoBehaviour
     {
         activated = true;
         spr.sprite = activeSprite;
-        gm.checkpoint = checkpointNumber;
+        l.checkpoints.Add(this);
+        gm.checkpoint = l.checkpoints.Count-1;
         ply.FreezePlayer(true);
         gm.PlaySFX(gm.sfx[4]);
         checkText.color = Color.white;
