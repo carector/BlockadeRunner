@@ -7,6 +7,7 @@ using UnityEngine.Audio;
 using UnityEngine.U2D;
 public class GameManager : MonoBehaviour
 {
+    public bool useGenericIntroAnimation;
     public AudioClip[] sfx;
     public int checkpoint = 0;
     public bool running;
@@ -258,14 +259,15 @@ public class GameManager : MonoBehaviour
     {
         running = false;
         beginText.color = Color.white;
+        spr.color = Color.white;
         yield return WaitForInputPress();
-        PlayMusic();
+        //PlayMusic();
         beginText.color = Color.clear;
         logo.color = Color.clear;
         //StartCoroutine(FadeOutLogo());
         //yield return new WaitForSeconds(6.4f);
-        Instantiate(explosion, ply.transform.position, Quaternion.identity);
-        yield return new WaitForSeconds(0.5f);
+        //Instantiate(explosion, ply.transform.position, Quaternion.identity);
+        //yield return new WaitForSeconds(0.5f);
         spr.color = Color.white;
         deathsText.color = Color.white;
         timerText.color = Color.white;
